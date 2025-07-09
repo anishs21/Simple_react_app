@@ -17,12 +17,12 @@ jobs:
         with:
           node-version: 18
 
-      - name: Install dependencies and build
+      - name: Install dependencies and build React app
         run: |
           npm install
           npm run build
 
-      - name: Deploy React build to EC2 via SCP
+      - name: Deploy React to EC2
         uses: appleboy/scp-action@v0.1.3
         with:
           host: ${{ secrets.EC2_IP }}
