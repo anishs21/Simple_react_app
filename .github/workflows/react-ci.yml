@@ -1,32 +1,43 @@
-name: React CI
+name: React CI/CD to EC2
 
 on:
   push:
     branches: [main]
 
 jobs:
-  build-react:
+  build:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout Code
-      - name: Checkout Code
+      - name: Checkout code
         uses: actions/checkout@v2
 
-      # 2. Set up Node.js
-      - name: Set up Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 18
 
-      # 3. Install Dependencies
-      - name: Install Dependencies
+      - name: Install dependencies
         run: npm install
 
-      # 4. Run Build
-      - name: Run Build
+      - name: Build React app
         run: npm run build
 
-      # 5. Test Build Output
-      - name: Test Build Output
-        run: ls -l build/
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Deploy to EC2 via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_IP }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY }}
+          script: |
+            cd /var/www/react-frontend
+            git pull origin main
+            npm install
+            npm run build
+            pm2 restart react-app || echo "PM2 process not found"
