@@ -23,6 +23,20 @@ jobs:
       - name: Build React app
         run: npm run build
 
+      - name: Install OpenVPN
+        run: sudo apt-get update && sudo apt-get install openvpn -y
+
+      - name: Create VPN config
+        run: echo "${{ secrets.VPN_CONFIG }}" > vpn.conf
+
+      - name: Create VPN creds
+        run: |
+          echo "${{ secrets.VPN_CREDS }}" > vpn.txt
+          echo "auth-user-pass vpn.txt" >> vpn.conf
+
+      - name: Start VPN
+        run: sudo openvpn --config vpn.conf --daemon && sleep 10
+
   deploy:
     needs: build
     runs-on: ubuntu-latest
