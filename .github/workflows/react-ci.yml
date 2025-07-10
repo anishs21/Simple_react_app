@@ -26,16 +26,43 @@ jobs:
       - name: Install OpenVPN
         run: sudo apt-get update && sudo apt-get install openvpn -y
 
-      - name: Create VPN config
-        run: echo "${{ secrets.VPN_CONFIG }}" > vpn.conf
-
-      - name: Create VPN creds
+      - name: Create VPN 1 config from existing secrets
         run: |
-          echo "${{ secrets.VPN_CREDS }}" > vpn.txt
-          echo "auth-user-pass vpn.txt" >> vpn.conf
+          echo "${{ secrets.VPN_CONFIG }}" > vpn1.conf
+          echo "${{ secrets.VPN_CREDS }}" > vpn1.txt
+          echo "auth-user-pass vpn1.txt" >> vpn1.conf
 
-      - name: Start VPN
-        run: sudo openvpn --config vpn.conf --daemon && sleep 10
+      - name: Create VPN 2 config
+        run: |
+          echo "${{ secrets.VPN2_CONFIG }}" > vpn2.conf
+          echo "${{ secrets.VPN2_CREDS }}" > vpn2.txt
+          echo "auth-user-pass vpn2.txt" >> vpn2.conf
+
+      - name: Check IP before VPN
+        run: |
+          echo "Public IP before VPN:"
+          curl ifconfig.me
+
+      - name: Connect to VPN (fallback if VPN 1 fails)
+        run: |
+          echo "Attempting VPN 1..."
+          sudo openvpn --config vpn1.conf --daemon
+          sleep 10
+          curl --max-time 10 ifconfig.me || {
+            echo "VPN 1 failed, switching to VPN 2..."
+            sudo pkill openvpn
+            sudo openvpn --config vpn2.conf --daemon
+            sleep 10
+            curl --max-time 10 ifconfig.me || {
+              echo "Both VPNs failed. Exiting CI."
+              exit 1
+            }
+          }
+
+      - name: Check IP after VPN
+        run: |
+          echo "Public IP after VPN:"
+          curl ifconfig.me
 
   deploy:
     needs: build
