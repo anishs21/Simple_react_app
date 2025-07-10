@@ -51,14 +51,14 @@ jobs:
         run: |
           echo "Attempting VPN 1..."
           sudo openvpn --config vpn1.conf --daemon --log vpn1.log
-          sleep 15
+          sleep 30
 
           if ! sudo grep -q "Initialization Sequence Completed" vpn1.log; then
             echo "VPN 1 failed. Trying VPN 2..."
             sudo pkill openvpn
 
             sudo openvpn --config vpn2.conf --daemon --log vpn2.log
-            sleep 15
+            sleep 30
 
             if ! sudo grep -q "Initialization Sequence Completed" vpn2.log; then
               echo "Both VPNs failed. Printing logs..."
