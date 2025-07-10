@@ -31,12 +31,14 @@ jobs:
           echo "${{ secrets.VPN_CONFIG }}" > vpn1.conf
           echo "${{ secrets.VPN_CREDS }}" > vpn1.txt
           echo "auth-user-pass vpn1.txt" >> vpn1.conf
+          echo "redirect-gateway def1" >> vpn1.conf
 
       - name: Create VPN 2 config
         run: |
           echo "${{ secrets.VPN2_CONFIG }}" > vpn2.conf
           echo "${{ secrets.VPN2_CREDS }}" > vpn2.txt
           echo "auth-user-pass vpn2.txt" >> vpn2.conf
+          echo "redirect-gateway def1" >> vpn2.conf
 
       - name: Check IP before VPN
         run: |
