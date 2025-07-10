@@ -23,8 +23,10 @@ jobs:
       - name: Build React app
         run: npm run build
 
-      - name: Show public IP before VPN
-        run: curl ifconfig.me
+      - name: Check IP before VPN
+        run: |
+          echo "Public IP before VPN:"
+          curl ifconfig.me
 
       - name: Install OpenVPN
         run: sudo apt-get update && sudo apt-get install openvpn -y
@@ -44,7 +46,11 @@ jobs:
             exit 1
           fi
           echo "VPN 2 connected successfully."
-          echo "Public IP after VPN connection:"
+
+      - name: Check IP after VPN
+        run: |
+          echo "Public IP after VPN:"
+          echo "Checking IP after VPN connection..."
           curl ifconfig.me
 
   deploy:
