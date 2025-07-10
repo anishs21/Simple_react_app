@@ -30,6 +30,7 @@ jobs:
         run: |
           echo "${{ secrets.VPN_CONFIG }}" > vpn1.conf
           echo "${{ secrets.VPN_CREDS }}" > vpn1.txt
+          chmod 600 vpn1.txt
           echo "auth-user-pass vpn1.txt" >> vpn1.conf
           echo "redirect-gateway def1" >> vpn1.conf
 
@@ -37,6 +38,7 @@ jobs:
         run: |
           echo "${{ secrets.VPN2_CONFIG }}" > vpn2.conf
           echo "${{ secrets.VPN2_CREDS }}" > vpn2.txt
+          chmod 600 vpn2.txt
           echo "auth-user-pass vpn2.txt" >> vpn2.conf
           echo "redirect-gateway def1" >> vpn2.conf
 
@@ -48,13 +50,13 @@ jobs:
       - name: Connect to VPN (fallback if VPN 1 fails)
         run: |
           echo "Attempting VPN 1..."
-          sudo openvpn --config vpn1.conf --daemon
-          sleep 10
+          sudo openvpn --config vpn1.conf &
+          sleep 15
           curl --max-time 10 ifconfig.me || {
             echo "VPN 1 failed, switching to VPN 2..."
             sudo pkill openvpn
-            sudo openvpn --config vpn2.conf --daemon
-            sleep 10
+            sudo openvpn --config vpn2.conf &
+            sleep 15
             curl --max-time 10 ifconfig.me || {
               echo "Both VPNs failed. Exiting CI."
               exit 1
@@ -65,6 +67,13 @@ jobs:
         run: |
           echo "Public IP after VPN:"
           curl ifconfig.me
+
+      - name: Check tun interface and routes
+        run: |
+          echo "Interfaces:"
+          ip a
+          echo "Routes:"
+          ip route
 
       - name: Debug VPN logs
         run: |
@@ -89,3 +98,6 @@ jobs:
             npm install
             npm run build
             pm2 restart react-app || echo "PM2 process not found"
+
+
+            
