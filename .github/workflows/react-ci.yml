@@ -23,68 +23,29 @@ jobs:
       - name: Build React app
         run: npm run build
 
+      - name: Show public IP before VPN
+        run: curl ifconfig.me
+
       - name: Install OpenVPN
         run: sudo apt-get update && sudo apt-get install openvpn -y
 
-      - name: Create VPN 1 config from existing secrets
-        run: |
-          echo "${{ secrets.VPN_CONFIG }}" > vpn1.conf
-          echo "${{ secrets.VPN_CREDS }}" > vpn1.txt
-          chmod 600 vpn1.txt
-          echo "auth-user-pass vpn1.txt" >> vpn1.conf
-          echo "redirect-gateway def1" >> vpn1.conf
-
-      - name: Create VPN 2 config
+      - name: Create VPN config (VPN2 - no password)
         run: |
           echo "${{ secrets.VPN2_CONFIG }}" > vpn2.conf
-          echo "${{ secrets.VPN2_CREDS }}" > vpn2.txt
-          chmod 600 vpn2.txt
-          echo "auth-user-pass vpn2.txt" >> vpn2.conf
-          echo "redirect-gateway def1" >> vpn2.conf
 
-      - name: Check IP before VPN
+      - name: Start VPN (VPN2 - no password)
         run: |
-          echo "Public IP before VPN:"
-          curl ifconfig.me
-
-      - name: Connect to VPN (fallback if VPN 1 fails)
-        run: |
-          echo "Attempting VPN 1..."
-          sudo openvpn --config vpn1.conf --daemon --log vpn1.log
-          sleep 30
-
-          if ! sudo grep -q "Initialization Sequence Completed" vpn1.log; then
-            echo "VPN 1 failed. Trying VPN 2..."
-            sudo pkill openvpn
-
-            sudo openvpn --config vpn2.conf --daemon --log vpn2.log
-            sleep 30
-
-            if ! sudo grep -q "Initialization Sequence Completed" vpn2.log; then
-              echo "Both VPNs failed. Printing logs..."
-              echo "VPN 1 LOG ↓"
-              sudo cat vpn1.log || echo "No vpn1.log"
-              echo "VPN 2 LOG ↓"
-              sudo cat vpn2.log || echo "No vpn2.log"
-              exit 1
-            fi
+          echo "Starting VPN 2..."
+          sudo openvpn --config vpn2.conf --daemon --log vpn2.log
+          sleep 20
+          if ! sudo grep -q "Initialization Sequence Completed" vpn2.log; then
+            echo "VPN 2 failed to connect. Showing logs:"
+            sudo cat vpn2.log || echo "No vpn2.log"
+            exit 1
           fi
-
-          echo "VPN connected. Public IP:"
+          echo "VPN 2 connected successfully."
+          echo "Public IP after VPN connection:"
           curl ifconfig.me
-
-      - name: Check tun interface and routes
-        run: |
-          echo "Interfaces:"
-          ip a
-          echo "Routes:"
-          ip route
-
-      - name: Debug VPN logs
-        run: |
-          echo "OpenVPN logs (filtered):"
-          sudo cat vpn1.log 2>/dev/null || echo "No vpn1.log"
-          sudo cat vpn2.log 2>/dev/null || echo "No vpn2.log"
 
   deploy:
     needs: build
