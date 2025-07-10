@@ -54,14 +54,14 @@ jobs:
           sleep 15
 
           # Check if VPN1 failed (auth or any reason)
-          if ! grep -q "Initialization Sequence Completed" vpn1.log; then
+          if ! sudo grep -q "Initialization Sequence Completed" vpn1.log; then
             echo "VPN 1 failed. Trying VPN 2..."
             sudo pkill openvpn
 
             sudo openvpn --config vpn2.conf --daemon --log vpn2.log
             sleep 15
 
-            if ! grep -q "Initialization Sequence Completed" vpn2.log; then
+            if ! sudo grep -q "Initialization Sequence Completed" vpn2.log; then
               echo "Both VPNs failed. Exiting CI."
               exit 1
             fi
