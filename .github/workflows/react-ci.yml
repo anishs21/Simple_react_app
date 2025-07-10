@@ -53,18 +53,21 @@ jobs:
           sudo openvpn --config vpn1.conf --daemon --log vpn1.log
           sleep 15
 
-          if grep -q "AUTH_FAILED" vpn1.log; then
-            echo "VPN 1 AUTH_FAILED. Trying VPN 2..."
+          # Check if VPN1 failed (auth or any reason)
+          if ! grep -q "Initialization Sequence Completed" vpn1.log; then
+            echo "VPN 1 failed. Trying VPN 2..."
             sudo pkill openvpn
+
             sudo openvpn --config vpn2.conf --daemon --log vpn2.log
             sleep 15
-            if grep -q "AUTH_FAILED" vpn2.log; then
-              echo "VPN 2 AUTH_FAILED. Exiting CI."
+
+            if ! grep -q "Initialization Sequence Completed" vpn2.log; then
+              echo "Both VPNs failed. Exiting CI."
               exit 1
             fi
           fi
 
-          echo "Checking IP after VPN connection..."
+          echo "VPN connected. Public IP:"
           curl ifconfig.me
 
       - name: Check tun interface and routes
