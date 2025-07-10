@@ -50,22 +50,21 @@ jobs:
       - name: Connect to VPN (fallback if VPN 1 fails)
         run: |
           echo "Attempting VPN 1..."
-          sudo openvpn --config vpn1.conf &
+          sudo openvpn --config vpn1.conf --daemon --log vpn1.log
           sleep 15
-          curl --max-time 10 ifconfig.me || {
-            echo "VPN 1 failed, switching to VPN 2..."
-            sudo pkill openvpn
-            sudo openvpn --config vpn2.conf &
-            sleep 15
-            curl --max-time 10 ifconfig.me || {
-              echo "Both VPNs failed. Exiting CI."
-              exit 1
-            }
-          }
 
-      - name: Check IP after VPN
-        run: |
-          echo "Public IP after VPN:"
+          if grep -q "AUTH_FAILED" vpn1.log; then
+            echo "VPN 1 AUTH_FAILED. Trying VPN 2..."
+            sudo pkill openvpn
+            sudo openvpn --config vpn2.conf --daemon --log vpn2.log
+            sleep 15
+            if grep -q "AUTH_FAILED" vpn2.log; then
+              echo "VPN 2 AUTH_FAILED. Exiting CI."
+              exit 1
+            fi
+          fi
+
+          echo "Checking IP after VPN connection..."
           curl ifconfig.me
 
       - name: Check tun interface and routes
@@ -78,7 +77,8 @@ jobs:
       - name: Debug VPN logs
         run: |
           echo "OpenVPN logs (filtered):"
-          sudo cat /var/log/syslog | grep openvpn || echo "No VPN logs found"
+          sudo cat vpn1.log 2>/dev/null || echo "No vpn1.log"
+          sudo cat vpn2.log 2>/dev/null || echo "No vpn2.log"
 
   deploy:
     needs: build
@@ -98,6 +98,3 @@ jobs:
             npm install
             npm run build
             pm2 restart react-app || echo "PM2 process not found"
-
-
-            
