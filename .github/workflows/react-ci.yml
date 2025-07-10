@@ -66,6 +66,11 @@ jobs:
           echo "Public IP after VPN:"
           curl ifconfig.me
 
+      - name: Debug VPN logs
+        run: |
+          echo "OpenVPN logs (filtered):"
+          sudo cat /var/log/syslog | grep openvpn || echo "No VPN logs found"
+
   deploy:
     needs: build
     runs-on: ubuntu-latest
