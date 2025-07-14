@@ -2,19 +2,24 @@ const http = require('http');
 const { exec } = require('child_process');
 
 const server = http.createServer((req, res) => {
-  if (req.method === 'POST' && req.url === '/webhook') {
-    console.log(" Webhook triggered. Deploying React app...");
+  console.log(" Incoming request:", req.method, req.url);
 
-    exec('sh ./scripts/start.sh', (err, stdout, stderr) => {
+  if (req.method === 'POST' && req.url === '/webhook') {
+    console.log(" Webhook triggered. Deploying...");
+
+    exec('cmd.exe /c scripts\\start.cmd', (err, stdout, stderr) => {
       if (err) {
-        console.error(` Error: ${err.message}`);
+        console.error(" Deployment error:", err.message);
+        console.error(" Full error object:", err);
+        console.error(" STDERR:\n", stderr);
         res.writeHead(500);
-        return res.end(" Deployment failed");
+        return res.end(" Deployment failed. See terminal logs.");
       }
 
-      console.log(stdout);
+      console.log(" STDOUT:\n", stdout);
+      console.log(" STDERR (if any):\n", stderr);
       res.writeHead(200);
-      res.end(" Deployment complete");
+      res.end(" Deployment complete!");
     });
   } else {
     res.writeHead(200);
