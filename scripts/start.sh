@@ -1,11 +1,16 @@
 #!/bin/bash
-# Start or restart the web server after deployment
 
-# Try to restart nginx, if not installed, try apache2
-if systemctl is-active --quiet nginx; then
-  systemctl restart nginx
-elif systemctl is-active --quiet apache2; then
-  systemctl restart apache2
-else
-  echo "No supported web server (nginx or apache2) is running."
-fi
+echo "📥 Pulling latest code..."
+cd /absolute/path/to/REACT-SIMPLE-FRONTEND     # ← Replace this
+git pull origin main
+
+echo "📦 Installing dependencies..."
+npm install
+
+echo "⚙️ Building React app..."
+npm run build
+
+echo "🔁 Restarting web server..."
+sh ./scripts/server.sh
+
+echo "✅ Deployment done!"
